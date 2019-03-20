@@ -871,6 +871,30 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                                                         'workflowstate' => 'released'
                                                     ));
                     }
+
+                    // Coursework grade release check
+                    if ($cm->modname == 'coursework' ) {
+                        $coursework = new \mod_coursework\models\coursework($moduledata->id);
+
+                        if ($coursework->use_groups) {
+                            $group = $coursework->get_student_group($linkarray["userid"]);
+                            $allocatableid = $group->id;
+                            $allocatabletype = 'group';
+                        } else {
+                            $allocatableid = $linkarray["userid"];
+                            $allocatabletype = 'user';
+                        }
+
+                        $gradesreleased = $DB->record_exists_sql('SELECT id 
+                                                                     FROM {coursework_submissions}
+                                                                     WHERE allocatableid =  :allocatableid
+                                                                     AND allocatabletype = :allocatabletype
+                                                                     AND courseworkid = :courseworkid
+                                                                     AND firstpublished IS NOT NULL',
+                                                array('allocatableid' => $allocatableid,
+                                                      'allocatabletype' => $allocatabletype,
+                                                      'courseworkid' => $coursework->id()));
+                    }
                 }
 
                 $currentgradequery = false;
