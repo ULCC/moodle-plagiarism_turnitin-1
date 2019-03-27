@@ -35,6 +35,40 @@ if ( !empty( $cmid ) ) {
         case "workshop":
             $userrole = (has_capability('plagiarism/turnitin:viewfullreport', $context)) ? 'Instructor' : 'Learner';
             break;
+        case "coursework":
+            $tiisubmissionid = optional_param('submissionid',0, PARAM_INT);
+
+            if ($tiisubmissionid) {
+                $coursework = new \mod_coursework\models\coursework($cm->instance);
+                $submissiondata = $DB->get_record('plagiarism_turnitin_files', array('externalid' => $tiisubmissionid));
+
+                // Get allocatableid based on if it's group or single submission.
+                if ($coursework->use_groups){
+                    $user = mod_coursework\models\user::find($submissiondata->userid);
+                    $allocatable = $coursework->get_student_group($user);
+                    $allocatableid = $allocatable->id;
+                } else {
+                    $allocatableid = $submissiondata->userid;
+                }
+
+                // Find coursework submission.
+                $submission = $DB->get_record('coursework_submissions', array('courseworkid'=>$coursework->id, 'allocatableid' => $allocatableid));
+
+                $moduleclass = "turnitin_".$cm->modname;
+                $moduleobject = new $moduleclass;
+
+                // Check if current user can grade a submission.
+                if($moduleobject->can_grade($submission, $coursework)){
+                    $userrole = 'Instructor';
+                    $userid = $USER->id;
+
+                } else {
+                    // If they can't, display student view for GradeMark if launched so a user can't enter the grade.
+                    $userrole = 'Learner';
+                    $userid = $submissiondata->userid; // Submission user's id.
+                }
+            }
+            break;
         default:
             $userrole = (has_capability('mod/'.$cm->modname.':grade', $context)) ? 'Instructor' : 'Learner';
             break;
@@ -53,6 +87,9 @@ switch ($action) {
         $submissionid = required_param('submissionid', PARAM_INT);
         $dvtype = optional_param('dvtype', 'default', PARAM_ALPHAEXT);
         $user = new turnitintooltwo_user($USER->id, $userrole);
+        if ($cm->modname = 'coursework'){ // For Coursework use userid which determines whether the current user can add/edit the grade.
+            $user = new turnitintooltwo_user($userid, $userrole);
+        }
         $coursedata = turnitintooltwo_assignment::get_course_data($cm->course, 'PP');
 
         if ($userrole == 'Instructor') {

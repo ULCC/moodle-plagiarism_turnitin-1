@@ -872,12 +872,13 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                                                     ));
                     }
 
-                    // Coursework grade release check
+                    // Coursework grade release check.
                     if ($cm->modname == 'coursework' ) {
                         $coursework = new \mod_coursework\models\coursework($moduledata->id);
 
                         if ($coursework->use_groups) {
-                            $group = $coursework->get_student_group($linkarray["userid"]);
+                            $user = mod_coursework\models\user::find($linkarray["userid"]);
+                            $group = $coursework->get_student_group($user);
                             $allocatableid = $group->id;
                             $allocatabletype = 'group';
                         } else {
@@ -885,15 +886,20 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                             $allocatabletype = 'user';
                         }
 
+                        // Get Coursework submission.
+                        $submission = $DB->get_record('coursework_submissions', array('allocatableid' => $allocatableid,
+                                                                                           'allocatabletype' => $allocatabletype,
+                                                                                           'courseworkid' => $coursework->id()));
+
+                        // Check if submission was already graded. This is only for single graded coursework so stage_identifier is not needed.
+                        $hasgrade = $DB->record_exists('coursework_feedbacks', array('submissionid' => $submission->id));
+
+                        // Check if grade is released.
                         $gradesreleased = $DB->record_exists_sql('SELECT id 
                                                                      FROM {coursework_submissions}
-                                                                     WHERE allocatableid =  :allocatableid
-                                                                     AND allocatabletype = :allocatabletype
-                                                                     AND courseworkid = :courseworkid
+                                                                     WHERE id = :submissionid
                                                                      AND firstpublished IS NOT NULL',
-                                                array('allocatableid' => $allocatableid,
-                                                      'allocatabletype' => $allocatabletype,
-                                                      'courseworkid' => $coursework->id()));
+                                                                array('submissionid' => $submission->id));
                     }
                 }
 
@@ -981,8 +987,9 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                         $released = ((!$blindon) && ($gradesreleased && (!empty($plagiarismfile->gm_feedback) || $gradeexists)));
 
                         // Show link to open grademark.
+                        // Ignore Coursework with multiple markers.
                         if ($config->usegrademark && ($istutor || ($linkarray["userid"] == $USER->id && $released))
-                                 && !empty($gradeitem)) {
+                                 && !empty($gradeitem) && ($cm->modname != 'coursework' || ($cm->modname == 'coursework' && $moduleobject->can_grade($submission, $coursework)))) {
 
                             // Output grademark icon.
                             $gmicon = html_writer::tag('div', $OUTPUT->pix_icon('icon-edit',
@@ -1375,9 +1382,13 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
             if ($updaterequired) {
                 $DB->update_record('plagiarism_turnitin_files', $plagiarismfile);
 
-                if ($cm->modname == "coursework") {
-                    // At the moment TII doesn't support double marking so we won't synchronise grades from Grade Mark as it would destroy the workflow.
-                    return true;
+                // At the moment TII doesn't support double marking so we won't synchronise grades from Grade Mark for double marked courseworks as it would destroy the workflow.
+                if ($cm->modname == "coursework" ) {
+                    $moduleclass = "turnitin_".$cm->modname;
+                    $moduleobject = new $moduleclass;
+                    if ($moduleobject->double_marked_coursework($cm->instance)){
+                        return true;
+                    }
                 }
 
                 $gradeitem = $DB->get_record('grade_items',
@@ -1458,6 +1469,15 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                 }
             }
 
+            // Check if Coursework submission is a group submission.
+            if ($cm->modname == 'coursework' && $moduledata->use_groups){
+                $coursework = new \mod_coursework\models\coursework($moduledata->id);
+                $user = mod_coursework\models\user::find($userid);
+                if ($group = $coursework->get_student_group($user)){
+                    $userids = array($group->id); // Coursework uses allocatables (for groups it is group id).
+                }
+            }
+
             // Loop through all users and update grade.
             foreach ($userids as $userid) {
                 // Get gradebook data.
@@ -1481,6 +1501,14 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                                                         'itemmodule' => $cm->modname, 'itemnumber' => 0))) {
                             $currentgrade = $DB->get_record('grade_grades', array('userid' => $userid, 'itemid' => $gradeitem->id));
                         }
+                        break;
+                    case 'coursework':
+                        $gradesquery = array('allocatableid' => $userid, 'courseworkid' => $cm->instance);
+                        $usersubmission = $DB->get_record('coursework_submissions', $gradesquery);
+                        // This is only for single graded coursework so stage_identifier is not needed.
+                        $gradesquery = array('submissionid' => $usersubmission->id);
+                        $currentgrade = $DB->get_record('coursework_feedbacks', $gradesquery);
+                        $grade->lasteditedbyuser = $USER->id;
                         break;
                 }
 
@@ -1509,13 +1537,24 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                             $grade->grader = $USER->id;
                             $grade->attemptnumber = $attemptnumber;
                             break;
+
+                        case 'coursework':
+                            $grade->submissionid = $usersubmission->id;
+                            unset($grade->userid);
+                            $grade->assessorid = $USER->id;
+                            $grade->markernumber = 1;
+                            $grade->stage_identifier = 'assessor_1'; // Single graded Coursework only.
+                            $grade->finalised = 1;
+                            break;
                     }
 
                     $return = $DB->insert_record($table, $grade);
                 }
 
                 // Gradebook object.
-                if ($grade) {
+                // Coursework should not have their grades added to gradebook before the grade is released to students.
+                if ($grade && $cm->modname != 'coursework') {
+
                     $grades = new stdClass();
                     $grades->userid = $userid;
                     $grades->rawgrade = $grade->grade;
@@ -2081,8 +2120,14 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                                     mtrace("File updated: ".$plagiarismfile->id);
                                 }
 
-                                // at the moment TII doesn't support double marking so we won't synchronise grades from Grade Mark as it would destroy the workflow
-                                if (!is_null($plagiarismfile->grade) && $cm->modname != "coursework") {
+                                // At the moment TII doesn't support double marking so we only synchronise grades from Grade Mark for a single marked coursework.
+                                if ($cm->modname == "coursework" ){
+                                    $moduleclass = "turnitin_".$cm->modname;
+                                    $moduleobject = new $moduleclass;
+                                    $doublemarkingcw = $moduleobject->double_marked_coursework($moduledata->id);
+                                }
+
+                                if (!is_null($plagiarismfile->grade) && ($cm->modname != "coursework" || ($cm->modname == "coursework" && !$doublemarkingcw))) {
                                     $this->update_grade($cm, $readsubmission, $currentsubmission->userid);
                                 }
                             }

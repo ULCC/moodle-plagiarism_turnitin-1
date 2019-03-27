@@ -88,4 +88,50 @@ class turnitin_coursework {
     public function initialise_post_date($moduledata) {
         return 0;
     }
+
+
+    /**
+     * Check if the coursework uses multiple markers.
+     *
+     * @param $courseworkid
+     * @return bool
+     */
+    public function double_marked_coursework($courseworkid){
+
+        $coursework = new \mod_coursework\models\coursework($courseworkid);
+        return $doublemarkingcw = $coursework->has_multiple_markers();
+    }
+
+
+    /**
+     * Check if current user can grade provided submission.
+     *
+     * @param $submission
+     * @param $coursework
+     * @return bool
+     * @throws dml_exception
+     */
+    public function can_grade($submission, $coursework){
+        global $DB, $USER;
+
+        $user = mod_coursework\models\user::find($USER->id);
+        $ability = new \mod_coursework\ability($user, $coursework);
+        $cw_feedback = '';
+        $new_feedback = '';
+
+        if ($feedback = $DB->get_record('coursework_feedbacks', array('submissionid'=>$submission->id))){
+            $cw_feedback = mod_coursework\models\feedback::build($feedback);
+
+        } else {
+            $feedback_params = array(
+                'submissionid' => $submission->id,
+                'assessorid' => $USER->id,
+                'stage_identifier' => 'assessor_1');
+
+            $new_feedback = mod_coursework\models\feedback::build($feedback_params);
+        }
+        // If a user doesn't have a capability to add or edit grade, or it's a double coursework, don't allow the user to enter the mark
+        return ((($cw_feedback && $ability->can('edit', $cw_feedback)) || ($new_feedback && $ability->can('new', $new_feedback))) && !$coursework->has_multiple_markers());
+    }
+
 }
