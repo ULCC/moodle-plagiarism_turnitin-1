@@ -958,6 +958,11 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                             // This class is applied so that only the user who submitted or a tutor can open the DV.
                             $useropenclass = ($USER->id == $linkarray["userid"] || $istutor) ? 'pp_origreport_open' : '';
 
+                            // Prevent students in Coursework to see the grades if their submission was not released.
+                            if ($cm->modname == 'coursework' && $hasgrade && !$gradesreleased){
+                                $useropenclass = '';
+                            }
+
                             // Output container for OR Score.
                             $ordivclass = 'row_score pp_origreport '.$useropenclass.' origreport_'.$plagiarismfile->externalid.'_'.$linkarray["cmid"];
                             $ordivid = $CFG->wwwroot.'/plagiarism/turnitin/extras.php?cmid='.$linkarray["cmid"];
