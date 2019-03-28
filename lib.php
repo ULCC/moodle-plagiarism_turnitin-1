@@ -1469,12 +1469,14 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                 }
             }
 
-            // Check if Coursework submission is a group submission.
-            if ($cm->modname == 'coursework' && $moduledata->use_groups){
-                $coursework = new \mod_coursework\models\coursework($moduledata->id);
-                $user = mod_coursework\models\user::find($userid);
-                if ($group = $coursework->get_student_group($user)){
-                    $userids = array($group->id); // Coursework uses allocatables (for groups it is group id).
+
+            if ($cm->modname == 'coursework' ){
+                $coursework  = new \mod_coursework\models\coursework($moduledata->id);
+                if($coursework->use_groups){ // Check if Coursework submission is a group submission.
+                    $user = mod_coursework\models\user::find($userid);
+                    if ($group = $coursework->get_student_group($user)) {
+                        $userids = array($group->id); // Coursework uses allocatables (for groups it is group id).
+                    }
                 }
             }
 
@@ -1545,6 +1547,10 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                             $grade->markernumber = 1;
                             $grade->stage_identifier = 'assessor_1'; // Single graded Coursework only.
                             $grade->finalised = 1;
+                            $gradejudge = new mod_coursework\grade_judge($coursework);
+                            if (!$gradejudge->grade_in_scale($grade->grade)){
+                                return false;
+                            }
                             break;
                     }
 
