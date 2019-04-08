@@ -63,7 +63,7 @@ class turnitin_coursework {
 
 
     public function create_file_event($params) {
-        return \mod_coursework\event\assessable_uploaded::create($params);
+        return \courseworksubmission_file\event\assessable_uploaded::create($params);
     }
 
 
