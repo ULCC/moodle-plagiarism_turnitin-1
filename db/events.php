@@ -47,6 +47,10 @@ $observers = array (
         'callback'  => 'plagiarism_turnitin_observer::courseworksubmission_file_uploaded'
     ),
     array(
+        'eventname' => '\courseworksubmission_onlinetext\event\assessable_uploaded',
+        'callback'  => 'plagiarism_turnitin_observer::courseworksubmission_onlinetext_uploaded'
+    ),
+    array(
         'eventname' => '\mod_coursework\event\assessable_submitted',
         'callback'  => 'plagiarism_turnitin_observer::coursework_submitted'
     ),

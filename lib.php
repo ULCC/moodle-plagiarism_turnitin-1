@@ -2382,6 +2382,12 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                                                     array('workshopid' => $cm->instance,
                                                             'authorid' => $userid), 'timemodified');
                             break;
+                        case 'coursework':
+                            $moodlesubmission = $DB->get_record('coursework_submissions',
+                                                    array('courseworkid' => $cm->instance,
+                                                          'authorid' => $userid,
+                                                          'id' => $itemid), 'timemodified');
+                            break;
                     }
 
                     $timemodified = $moodlesubmission->timemodified;

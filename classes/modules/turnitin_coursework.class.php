@@ -134,4 +134,33 @@ class turnitin_coursework {
         return ((($cw_feedback && $ability->can('edit', $cw_feedback)) || ($new_feedback && $ability->can('new', $new_feedback))) && !$coursework->has_multiple_markers());
     }
 
+    public function set_content($linkarray, $cm) {
+        $onlinetextdata = $this->get_onlinetext($linkarray["userid"], $cm);
+
+        return (empty($onlinetextdata->onlinetext)) ? '' : $onlinetextdata->onlinetext;
+    }
+
+
+    public function get_onlinetext($userid, $cm) {
+        global $DB;
+
+        // Get latest text content submitted as we do not have submission id.
+        $submissions = $DB->get_records_select('coursework_submissions', ' authorid = ? AND courseworkid = ? ',
+                                                array($userid, $cm->instance), 'id DESC', 'id', 0, 1);
+        $submission = end($submissions);
+        $moodletextsubmission = $DB->get_record('cwksub_onlinetext',
+                        array('submissionid' => $submission->id), 'onlinetext, onlineformat');
+
+        $onlinetextdata = new stdClass();
+        $onlinetextdata->itemid = $submission->id;
+
+        if (isset($moodletextsubmission->onlinetext)) {
+            $onlinetextdata->onlinetext = $moodletextsubmission->onlinetext;
+        }
+        if (isset($moodletextsubmission->onlineformat)) {
+            $onlinetextdata->onlineformat = $moodletextsubmission->onlineformat;
+        }
+
+        return $onlinetextdata;
+    }
 }
