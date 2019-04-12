@@ -87,7 +87,7 @@ switch ($action) {
         $submissionid = required_param('submissionid', PARAM_INT);
         $dvtype = optional_param('dvtype', 'default', PARAM_ALPHAEXT);
         $user = new turnitintooltwo_user($USER->id, $userrole);
-        if ($cm->modname = 'coursework'){ // For Coursework use userid which determines whether the current user can add/edit the grade.
+        if ($cm->modname == 'coursework'){ // For Coursework use userid which determines whether the current user can add/edit the grade.
             $user = new turnitintooltwo_user($userid, $userrole);
         }
         $coursedata = turnitintooltwo_assignment::get_course_data($cm->course, 'PP');
