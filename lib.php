@@ -3036,6 +3036,15 @@ function plagiarism_turnitin_send_queued_submissions() {
                                                         array('id' => $queueditem->itemid), 'content');
                             $textcontent = $moodlesubmission->content;
                             break;
+
+                        case 'coursework':
+                            $moodlesubmission = $DB->get_record('coursework_submissions', array('courseworkid' => $cm->instance,
+                                'authorid' => $queueditem->userid, 'id' => $queueditem->itemid), 'id');
+
+                            $moodletextsubmission = $DB->get_record('cwksub_onlinetext',
+                                                        array('submissionid' => $moodlesubmission->id), 'onlinetext');
+                            $textcontent = $moodletextsubmission->onlinetext;
+                            break;
                     }
 
                     $title = 'onlinetext_'.$user->id."_".$cm->id."_".$cm->instance.'.txt';
