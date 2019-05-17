@@ -40,8 +40,16 @@ if ( !empty( $cmid ) ) {
         case "coursework":
             $tiisubmissionid = optional_param('submissionid',0, PARAM_INT);
 
-            if ($tiisubmissionid) {
-                $coursework = new \mod_coursework\models\coursework($cm->instance);
+            $moduleclass = "turnitin_".$cm->modname;
+            $moduleobject = new $moduleclass;
+            $coursework = new \mod_coursework\models\coursework($cm->instance);
+
+            if($moduleobject->can_add_all_grades($coursework)){
+                $userrole = 'Instructor';
+                $userid = $USER->id;
+
+            } else if ($tiisubmissionid) {
+
                 $submissiondata = $DB->get_record('plagiarism_turnitin_files', array('externalid' => $tiisubmissionid));
 
                 // Get allocatableid based on if it's group or single submission.
@@ -55,9 +63,6 @@ if ( !empty( $cmid ) ) {
 
                 // Find coursework submission.
                 $submission = $DB->get_record('coursework_submissions', array('courseworkid'=>$coursework->id, 'allocatableid' => $allocatableid));
-
-                $moduleclass = "turnitin_".$cm->modname;
-                $moduleobject = new $moduleclass;
 
                 // Check if current user can grade a submission.
                 if($moduleobject->can_grade($submission, $coursework)){

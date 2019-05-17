@@ -40,6 +40,11 @@ class turnitin_coursework {
         return has_any_capability($capabilities, $context);
     }
 
+    public function can_add_all_grades($coursework){
+        $context = $coursework->get_course_context();
+       return has_capability('mod/coursework:administergrades', $context);
+    }
+
     public function get_tutor_capability() {
         return 'mod/'.$this->modname.':addinitialgrade';
     }
