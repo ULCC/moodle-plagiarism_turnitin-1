@@ -83,7 +83,7 @@ class turnitin_coursework {
                 AND           cs.courseworkid     =   :courseworkid
                 AND           cf.stage_identifier =   :stage";
 
-        $params = array('stage' => 'final_agreed_1', 'authorid' => $userid, 'courseworkid' => $moduleid);
+        $params = array('stage' => 'assessor_1', 'authorid' => $userid, 'courseworkid' => $moduleid);
 
         $currentgradesquery = $DB->get_record_sql($sql, $params);
 

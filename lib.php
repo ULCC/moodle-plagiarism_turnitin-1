@@ -1013,7 +1013,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
 
                         // Ignore Coursework with multiple markers.
                         if ($config->plagiarism_turnitin_usegrademark && ($istutor || ($linkarray["userid"] == $USER->id && $released))
-                                 && !empty($gradeitem) && ($cm->modname != 'coursework' || ($cm->modname == 'coursework' && $moduleobject->can_grade($submission, $coursework)))) {
+                                 && !empty($gradeitem) && ($cm->modname != 'coursework' || ($cm->modname == 'coursework' && ($moduleobject->can_grade($submission, $coursework) || ($linkarray["userid"] == $USER->id && $released))))) {
 
                             // Output grademark icon.
                             $gmicon = html_writer::tag('div', $OUTPUT->pix_icon('icon-edit',
