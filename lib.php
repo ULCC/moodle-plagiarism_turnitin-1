@@ -1531,6 +1531,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                         // This is only for single graded coursework so stage_identifier is not needed.
                         $gradesquery = array('submissionid' => $usersubmission->id);
                         $currentgrade = $DB->get_record('coursework_feedbacks', $gradesquery);
+                        if ($currentgrade && $currentgrade->grade == $grade->grade) continue;
                         $grade->lasteditedbyuser = $USER->id;
                         break;
                 }
