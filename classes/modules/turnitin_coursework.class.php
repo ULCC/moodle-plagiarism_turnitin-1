@@ -168,4 +168,9 @@ class turnitin_coursework {
 
         return $onlinetextdata;
     }
+
+    public function create_text_event($params) {
+        return \courseworksubmission_onlinetext\event\assessable_uploaded::create($params);
+
+    }
 }
