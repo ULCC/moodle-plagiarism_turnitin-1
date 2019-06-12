@@ -998,6 +998,11 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                         // Check if blind marking is on and revealidentities is not set yet.
                         $blindon = (!empty($moduledata->blindmarking) && empty($moduledata->revealidentities));
 
+                        if ($cm->modname == 'coursework'){ // coursework uses blind marking on individual basis
+                            // Check if blind marking is on and user's identity is not revealed yet.
+                            $blindon = (!empty($moduledata->blindmarking) && empty($submission->firstpublished));
+                        }
+
                         // Check if a grade exists - as $currentgradequery->grade defaults to -1.
                         $gradeexists = false;
                         if (isset($currentgradequery->grade)) {
