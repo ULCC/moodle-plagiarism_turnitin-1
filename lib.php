@@ -1528,10 +1528,13 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                     case 'coursework':
                         $gradesquery = array('allocatableid' => $userid, 'courseworkid' => $cm->instance);
                         $usersubmission = $DB->get_record('coursework_submissions', $gradesquery);
+                        $coursework = new \mod_coursework\models\coursework($cm->instance);
+                       // check if the current user can grade
+                        if(!$moduleobject->can_grade($usersubmission, $coursework)) continue 2;
                         // This is only for single graded coursework so stage_identifier is not needed.
                         $gradesquery = array('submissionid' => $usersubmission->id);
                         $currentgrade = $DB->get_record('coursework_feedbacks', $gradesquery);
-                        if ($currentgrade && $currentgrade->grade == $grade->grade) continue;
+                        if ($currentgrade && $currentgrade->grade == $grade->grade) continue 2;
                         $grade->lasteditedbyuser = $USER->id;
                         break;
                 }
