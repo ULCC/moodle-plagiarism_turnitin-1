@@ -977,7 +977,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                             $useropenclass = ($USER->id == $linkarray["userid"] || $istutor) ? 'pp_origreport_open' : '';
 
                             // Prevent students in Coursework to see the grades if their submission was not released.
-                            if ($cm->modname == 'coursework' && $hasgrade && !$gradesreleased && !$istutor){
+                            if ($cm->modname == 'coursework' && $hasgrade && !$gradesreleased && !$istutor){ // remove $hasgrade
                                 $useropenclass = '';
                             }
 
@@ -1535,7 +1535,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                         $gradesquery = array('submissionid' => $usersubmission->id);
                         $currentgrade = $DB->get_record('coursework_feedbacks', $gradesquery);
                         if ($currentgrade && $currentgrade->grade == $grade->grade) continue 2;
-                        $grade->lasteditedbyuser = $USER->id;
+                        $grade->lasteditedbyuser = -1;
                         break;
                 }
 
@@ -1568,7 +1568,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                         case 'coursework':
                             $grade->submissionid = $usersubmission->id;
                             unset($grade->userid);
-                            $grade->assessorid = $USER->id;
+                            $grade->assessorid = -1;
                             $grade->markernumber = 1;
                             $grade->stage_identifier = 'assessor_1'; // Single graded Coursework only.
                             $grade->finalised = 1;
