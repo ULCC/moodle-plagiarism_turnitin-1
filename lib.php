@@ -857,6 +857,12 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                             'cm' => $linkarray["cmid"], 'identifier' => $identifier),
                             'lastmodified DESC', '*', 0, 1);
                     $plagiarismfile = current($plagiarismfiles);
+
+                    if ($linkarray["cmid"] == 2177908 && $linkarray["userid"] == 273837){
+                        echo "Hello " . $linkarray["userid"] . "<br>";
+                        var_dump($plagiarismfile);
+                        echo "<br>";
+                    }
                 }
 
                 // Populate gradeitem query.
@@ -977,7 +983,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                             $useropenclass = ($USER->id == $linkarray["userid"] || $istutor) ? 'pp_origreport_open' : '';
 
                             // Prevent students in Coursework to see the grades if their submission was not released.
-                            if ($cm->modname == 'coursework' && $hasgrade && !$gradesreleased && !$istutor){ // remove $hasgrade
+                            if ($cm->modname == 'coursework' && !$gradesreleased && !$istutor){ 
                                 $useropenclass = '';
                             }
 
