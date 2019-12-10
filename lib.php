@@ -857,12 +857,6 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                             'cm' => $linkarray["cmid"], 'identifier' => $identifier),
                             'lastmodified DESC', '*', 0, 1);
                     $plagiarismfile = current($plagiarismfiles);
-
-                    if ($linkarray["cmid"] == 2177908 && $linkarray["userid"] == 273837){
-                        echo "Hello " . $linkarray["userid"] . "<br>";
-                        var_dump($plagiarismfile);
-                        echo "<br>";
-                    }
                 }
 
                 // Populate gradeitem query.
