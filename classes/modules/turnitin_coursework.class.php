@@ -136,7 +136,7 @@ class turnitin_coursework {
             $new_feedback = mod_coursework\models\feedback::build($feedback_params);
         }
         // If a user doesn't have a capability to add or edit grade, or it's a double coursework, don't allow the user to enter the mark
-        return ((($cw_feedback && $ability->can('edit', $cw_feedback) && $cw_feedback->assessorid == -1) || ($new_feedback && $ability->can('new', $new_feedback))) && !$coursework->has_multiple_markers());
+        return ((($cw_feedback && $ability->can('edit', $cw_feedback)) || ($new_feedback && $ability->can('new', $new_feedback))) && !$coursework->has_multiple_markers());
     }
 
     public function set_content($linkarray, $cm) {
