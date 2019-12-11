@@ -908,6 +908,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                         $submission = $DB->get_record('coursework_submissions', array('allocatableid' => $allocatableid,
                                                                                            'allocatabletype' => $allocatabletype,
                                                                                            'courseworkid' => $coursework->id()));
+                        $finalised = $submission->finalised;
 
                         // Check if submission was already graded. This is only for single graded coursework so stage_identifier is not needed.
                         $hasgrade = $DB->record_exists('coursework_feedbacks', array('submissionid' => $submission->id));
@@ -976,8 +977,8 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                             // This class is applied so that only the user who submitted or a tutor can open the DV.
                             $useropenclass = ($USER->id == $linkarray["userid"] || $istutor) ? 'pp_origreport_open' : '';
 
-                            // Prevent students in Coursework to see the grades if their submission was not released.
-                            if ($cm->modname == 'coursework' && !$gradesreleased && !$istutor){ 
+                            // Prevent students in Coursework to see the grades if their submission was not released or submitted&finalised, waiting to be graded
+                            if ($cm->modname == 'coursework' && !$finalised && !$gradesreleased && !$istutor){
                                 $useropenclass = '';
                             }
 
