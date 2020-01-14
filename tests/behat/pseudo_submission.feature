@@ -1,5 +1,5 @@
 @plugin @plagiarism @plagiarism_turnitin @plagiarism_turnitin_pseudo
-Feature: Plagiarism plugin works with a Moodle Assignment
+Feature: Plagiarism plugin works with a Moodle Assignment and utilise student data privacy
   In order to allow students to send assignment submissions to Turnitin with pseudo enabled at account level
   As a user
   I need to create an assignment with the plugin enabled and the assignment to launch successfully and for student names to be masked in the inbox.
@@ -27,7 +27,7 @@ Feature: Plagiarism plugin works with a Moodle Assignment
     And I configure Turnitin URL
     And I configure Turnitin credentials
     And I set the following fields to these values:
-      | Enable Diagnostic Mode | Yes |
+      | Enable Diagnostic Mode | Standard |
       | Enable Student Privacy | Yes |
     And I press "Save changes"
     And I navigate to "Plugins > Plagiarism > Turnitin" in site administration

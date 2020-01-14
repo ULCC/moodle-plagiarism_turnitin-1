@@ -1,6 +1,5 @@
 @plugin @plagiarism @plagiarism_turnitin @plagiarism_turnitin_assignment @plagiarism_turnitin_assignment_groups
-
-Feature: Group assignment submissions
+Feature: Plagiarism plugin works with a Moodle Assignment for group submissions
   In order to allow students to work collaboratively on an assignment
   As a teacher
   I need to group submissions in groups
@@ -34,7 +33,7 @@ Feature: Group assignment submissions
     And I configure Turnitin URL
     And I configure Turnitin credentials
     And I set the following fields to these values:
-      | Enable Diagnostic Mode | Yes |
+      | Enable Diagnostic Mode | Standard |
     And I press "Save changes"
     # Create Assignment.
     And I am on "Course 1" course homepage with editing mode on

@@ -1,5 +1,5 @@
 @plugin @plagiarism @plagiarism_turnitin @plagiarism_turnitin_smoke @plagiarism_turnitin_installed
-Feature:  Installation succeeds
+Feature:  Plagiarism plugin can be installed and enabled
   In order to use this plugin
   As a user
   I need the installation to work and plagiarism plugins to be enabled
@@ -16,7 +16,7 @@ Feature:  Installation succeeds
     And I configure Turnitin URL
     And I configure Turnitin credentials
     And I set the following fields to these values:
-      | Enable Diagnostic Mode | Yes |
+      | Enable Diagnostic Mode | Standard |
     And I press "Save changes"
     Then the following should exist in the "plugins-control-panel" table:
       | Plugin name         |

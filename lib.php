@@ -320,7 +320,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
             if ($PAGE->pagetype != 'course-editbulkcompletion' && $PAGE->pagetype != 'course-editdefaultcompletion') {
                 // Create/Edit course in Turnitin and join user to class.
                 $course = $this->get_course_data($cmid, $COURSE->id);
-                $turnitinview->add_elements_to_settings_form($mform, $course, "activity", $cmid, $plagiarismvalues["plagiarism_rubric"]);
+                $turnitinview->add_elements_to_settings_form($mform, $course, "activity", $modulename, $cmid, $plagiarismvalues["plagiarism_rubric"]);
             }
 
             // Disable all plagiarism elements if turnitin is not enabled.
@@ -1056,7 +1056,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                             // Update assignment in case rubric is not stored in Turnitin yet.
                             $this->sync_tii_assignment($cm, $coursedata->turnitin_cid);
 
-                            $rubricviewlink = html_writer::tag('span','',
+                            $rubricviewlink = html_writer::tag('span', '',
                                 array('class' => 'rubric_view rubric_view_pp_launch tii_tooltip',
                                     'title' => get_string('launchrubricview',
                                         'plagiarism_turnitin'), 'id' => 'rubric_view_launch'
@@ -1328,7 +1328,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
         $updaterequired = false;
 
         if ($submissiondata = $DB->get_record('plagiarism_turnitin_files', array('id' => $submissionid),
-                                                 'id, cm, userid, identifier, similarityscore, grade, submissiontype, orcapable, student_read, gm_feedback')) {
+                                                 'id, cm, userid, identifier, similarityscore, grade, submissiontype, orcapable, student_read, gm_feedback, errorcode')) {
 
             // Build Plagiarism file object.
             $plagiarismfile = new stdClass();
@@ -1342,6 +1342,11 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
             $plagiarismfile->grade = ($tiisubmission->getGrade() == '') ? null : $tiisubmission->getGrade();
             $plagiarismfile->orcapable = ($tiisubmission->getOriginalityReportCapable() == 1) ? 1 : 0;
             $plagiarismfile->gm_feedback = $tiisubmission->getFeedbackExists();
+
+            // If error code is 13, set the status to success otherwise resetting the errorcode will hide the submission.
+            if ($submissiondata->errorcode == 13) {
+                $plagiarismfile->statuscode = 'success';
+            }
 
             // Reset Error Values.
             $plagiarismfile->errorcode = null;
@@ -1429,7 +1434,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
     /**
      * Update module grade and gradebook.
      */
-    private function update_grade($cm, $submission, $userid, $type = 'submission') {
+    private function update_grade($cm, $submission, $userid) {
         global $DB, $USER, $CFG;
         $return = true;
         $grade = $submission->getGrade();
@@ -1967,47 +1972,6 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
     }
 
     /**
-     * Call functions to be run by cron
-     */
-    public function cron() {
-        global $DB, $CFG, $pptaskcall;
-
-        // 2.7 onwards we would like to be called from task calls.
-        if ( $CFG->version > 2014051200 AND !$pptaskcall ) {
-            mtrace("[Turnitin Plagiarism Plugin] Aborted Cron call because of active task mode");
-            return;
-        }
-
-        // Reset task call flag.
-        if ( $pptaskcall ) {
-            $pptaskcall = false;
-        }
-
-        // Don't attempt to call Turnitin if a connection to Turnitin could not be established.
-        if (!$this->test_turnitin_connection()) {
-            mtrace(get_string('ppeventsfailedconnection', 'plagiarism_turnitin'));
-            return false;
-        }
-
-        // Update scores by separate submission type.
-        $submissiontypes = array('file', 'text_content', 'forum_post');
-        foreach ($submissiontypes as $submissiontype) {
-            try {
-                $typefield = ($CFG->dbtype == "oci") ? " to_char(submissiontype) " : " submissiontype ";
-                $submissions = $DB->get_records_select('plagiarism_turnitin_files',
-                " statuscode = ? AND ".$typefield." = ?
-                  AND ( similarityscore IS NULL OR duedate_report_refresh = 1 )
-                  AND ( orcapable = ? OR orcapable IS NULL ) ",
-                array('success', $submissiontype, 1), 'externalid DESC');
-                $this->cron_update_scores($submissiontype, $submissions);
-            } catch (Exception $ex) {
-                mtrace("Exception in TII cron while updating scores for '$submissiontype' submission types: ".$ex);
-            }
-        }
-        return true;
-    }
-
-    /**
      * Updates the database field duedate_report_refresh for any given submission ID.
      * @param int $id - the ID of the submission to update.
      * @param int $newvalue - the value to which the field should be set.
@@ -2026,13 +1990,22 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
      * @param array $submissions - the submissions to be processed
      * @return boolean
      */
-    public function cron_update_scores($submissiontype = 'file', $submissions) {
+    public function cron_update_scores() {
         global $DB;
 
         $submissionids = array();
         $reportsexpected = array();
         $assignmentids = array();
         $validatedsubmissions = array();
+
+        $submissions = $DB->get_records_select(
+          'plagiarism_turnitin_files',
+          'statuscode = ?
+          AND ( similarityscore IS NULL OR duedate_report_refresh = 1 )
+          AND ( orcapable = ? OR orcapable IS NULL ) ',
+          array('success', 1),
+          'externalid DESC'
+        );
 
         // Add submission ids to the request.
         foreach ($submissions as $tiisubmission) {
@@ -2892,7 +2865,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
  */
 function plagiarism_turnitin_update_reports() {
     $pluginturnitin = new plagiarism_plugin_turnitin();
-    return $pluginturnitin->cron();
+    return $pluginturnitin->cron_update_scores();
 }
 
 /**
@@ -3033,7 +3006,7 @@ function plagiarism_turnitin_send_queued_submissions() {
                         plagiarism_turnitin_activitylog('File not found for submission: '.$queueditem->id, 'PP_NO_FILE');
                         mtrace('File not found for submission. Identifier: '.$queueditem->id);
                         $errorcode = 9;
-                        continue;
+                        continue 2;
                     }
 
                     $title = $file->get_filename();
@@ -3046,7 +3019,7 @@ function plagiarism_turnitin_send_queued_submissions() {
                         mtrace($e);
                         mtrace('File content not found on submission. Identifier: '.$queueditem->identifier);
                         $errorcode = 9;
-                        continue;
+                        continue 2;
                     }
                 } else {
                     // Get the actual text content for a submission.
