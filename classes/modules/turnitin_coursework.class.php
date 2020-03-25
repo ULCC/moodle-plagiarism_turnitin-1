@@ -173,4 +173,40 @@ class turnitin_coursework {
         return \courseworksubmission_onlinetext\event\assessable_uploaded::create($params);
 
     }
+
+    /**
+     * Check if resubmissions in a Turnitin sense are allowed to an coursework.
+     *
+     * @param $courseworkid
+     */
+    public function is_resubmission_allowed($courseworkid, $reportgenspeed, $submissiontype, $attemptreopenmethod=null,
+                                            $attemptreopened = null) {
+        global $DB, $CFG;
+
+        // Get the maximum number of file submissions allowed.
+        $params = array('courseworkid' => $courseworkid);
+
+        $maxfilesubmissions = 0;
+
+        $sql = "SELECT value
+                FROM {coursework_sub_plugin} csp JOIN {coursework_sub_plugin_cfg} cspc ON csp.id = cspc.subpluginid
+                WHERE csp.name = 'file' AND  courseworkid = :courseworkid AND cspc.name = 'maxfiles'";
+
+
+        if ($result = $DB->get_record_sql($sql, $params)) {
+            $maxfilesubmissions = $result->value;
+        }
+
+        // If resubmissions are enabled in a Turnitin sense.
+        if ($reportgenspeed > 0) {
+
+            // If this is a text or file submission, or we can only submit one file.
+            if ($submissiontype == 'text_content' || ($submissiontype == 'file' && $maxfilesubmissions == 1)) {
+                    // Treat this as a resubmission.
+                    return true;
+            }
+        }
+        return false;
+    }
+
 }

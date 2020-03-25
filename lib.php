@@ -2338,6 +2338,15 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
             if ($eventtype != "content_uploaded" && $eventtype != "file_uploaded") {
                 unset($_SESSION["moodlesubmissionstatus"]);
             }
+
+        } elseif ($cm->modname == 'coursework'){
+            $userid = $author;
+            $moduledata->resubmission_allowed = $moduleobject->is_resubmission_allowed(
+                $cm->instance,
+                $settings["plagiarism_report_gen"],
+                $submissiontype
+            );
+
         } else {
             $userid = $author;
         }
@@ -2930,6 +2939,13 @@ function plagiarism_turnitin_send_queued_submissions() {
                 $queueditem->submissiontype,
                 $moduledata->attemptreopenmethod,
                 $moodlesubmission->status
+            );
+        } elseif($cm->modname == 'coursework'){
+
+            $moduledata->resubmission_allowed = $moduleobject->is_resubmission_allowed(
+                $cm->instance,
+                $settings["plagiarism_report_gen"],
+                $queueditem->submissiontype
             );
         }
 
