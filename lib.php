@@ -1841,8 +1841,8 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
             $assignment->setMaxGrade(($moduledata->grade < 0) ? 100 : (int)$moduledata->grade);
         }
 
-        if (!empty($moduledata->allowsubmissionsfromdate)) {
-            $dtstart = $moduledata->allowsubmissionsfromdate;
+        if (!empty($moduledata->allowsubmissionsfromdate) || (($cm->modname == 'coursework') && !empty($moduledata->startdate))) {
+            $dtstart = ($cm->modname != 'coursework')? $moduledata->allowsubmissionsfromdate : $moduledata->startdate;
         } else if (!empty($moduledata->timeavailable)) {
             $dtstart = $moduledata->timeavailable;
         } else {
@@ -1904,6 +1904,9 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
 
         // Set due date, dependent on various things.
         $dtdue = (!empty($moduledata->duedate)) ? $moduledata->duedate : 0;
+        if ($cm->modname == 'coursework'){ // for coursework use deadline
+            $dtdue = (!empty($moduledata->deadline)) ? $moduledata->deadline : 0;
+        }
 
         // If the due date has been set more than a year ahead then restrict it to 1 year from now.
         if ($dtdue > strtotime('+1 year')) {
@@ -2017,6 +2020,26 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                 $moduledata = $DB->get_record($cm->modname, array('id' => $cm->instance));
                 $now = strtotime('now');
                 $dtdue = (!empty($moduledata->duedate)) ? $moduledata->duedate : 0;
+                if ($cm->modname == 'coursework'){ // for coursework use deadline
+                    $coursework = new \mod_coursework\models\coursework($cm->instance);
+                    if(!empty($moduledata->deadline)){
+                        if($moduledata->personaldeadlineenabled){ // check if submission uses personal deadline
+                            $dtdue =
+                                \mod_coursework\models\personal_deadline::get_personal_deadline_for_student(\mod_coursework\models\user::find($tiisubmission->userid), $coursework);
+                        } else {
+                            $dtdue = $moduledata->deadline;
+                        }
+                        // check is submission was given an extension and use it as a deadline if exists
+                        $mitigation =
+                            \mod_coursework\models\mitigation::get_mitigation_for_student(\mod_coursework\models\user::find($tiisubmission->userid), $coursework);
+                        if($mitigation && $mitigation->type == 'extension'){
+                            $dtdue = $mitigation->extended_deadline;
+                        }
+                    } else {
+                        $dtdue =  0;
+                    };
+                }
+
                 if ($now >= $dtdue && $now < strtotime('+1 day', $dtdue)) {
                     $this->set_duedate_report_refresh($tiisubmission->id, 1);
                 }
