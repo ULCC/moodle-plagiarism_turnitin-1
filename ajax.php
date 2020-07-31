@@ -414,7 +414,6 @@ switch ($action) {
 
         echo json_encode($options);
         break;
-
 }
 
 if (!empty($return)) {
