@@ -116,6 +116,21 @@ class plagiarism_turnitin_observer {
         $plugin = new plagiarism_plugin_turnitin();
         $plugin->event_handler($eventdata);
     }
+    /**
+     * Handle the coursework assessable_submitted event.
+     * @param \mod_coursework\event\assessable_uploaded $event
+     */
+    public static function coursework_uploaded(
+        \mod_coursework\event\assessable_uploaded $event) {
+        $eventdata = $event->get_data();
+        $eventdata['eventtype'] = 'assessable_submitted';
+        $eventdata['other']['modulename'] = 'coursework';
+
+        $plugin = new plagiarism_plugin_turnitin();
+        $plugin->event_handler($eventdata);
+    }
+
+
 
     /**
      * Handle the coursework assessable_submitted event.

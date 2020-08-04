@@ -188,14 +188,25 @@ class turnitin_coursework {
 
         $maxfilesubmissions = 0;
 
-        $sql = "SELECT value
+        $dbman = $DB->get_manager();
+        if ($dbman->table_exists('coursework_sub_plugin')) {
+
+            $sql = "SELECT value
                 FROM {coursework_sub_plugin} csp JOIN {coursework_sub_plugin_cfg} cspc ON csp.id = cspc.subpluginid
                 WHERE csp.name = 'file' AND  courseworkid = :courseworkid AND cspc.name = 'maxfiles'";
 
+        } else {
+            $sql = "SELECT maxfiles FROM {coursework} WHERE id = :courseworkid";
 
-        if ($result = $DB->get_record_sql($sql, $params)) {
-            $maxfilesubmissions = $result->value;
         }
+        if ($result = $DB->get_record_sql($sql, $params)) {
+            if ($dbman->table_exists('coursework_sub_plugin')) {
+                 $maxfilesubmissions = $result->value;
+            } else {
+                $maxfilesubmissions = $result->maxfiles;
+            }
+        }
+
 
         // If resubmissions are enabled in a Turnitin sense.
         if ($reportgenspeed > 0) {

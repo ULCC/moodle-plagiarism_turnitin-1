@@ -2063,12 +2063,25 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                         } else {
                             $dtdue = $moduledata->deadline;
                         }
-                        // check is submission was given an extension and use it as a deadline if exists
-                        $mitigation =
-                            \mod_coursework\models\mitigation::get_mitigation_for_student(\mod_coursework\models\user::find($tiisubmission->userid), $coursework);
-                        if($mitigation && $mitigation->type == 'extension'){
-                            $dtdue = $mitigation->extended_deadline;
+
+                        $mitigation = $extension = false;
+
+                        $dbman = $DB->get_manager();
+                        if ($dbman->table_exists('coursework_mitigations')) {
+                            // check is submission was given an extension and use it as a deadline if exists
+                            $mitigation =
+                                \mod_coursework\models\mitigation::get_mitigation_for_student(\mod_coursework\models\user::find($tiisubmission->userid), $coursework);
+                        } else {
+                             $extension =
+                                 \mod_coursework\models\deadline_extension::get_extension_for_student(\mod_coursework\models\user::find($tiisubmission->userid), $coursework);
                         }
+                        if ($mitigation && $mitigation->type == 'extension')  {
+                            $dtdue = $mitigation->extended_deadline;
+                        } else if ($extension){
+                            $dtdue = $extension->extended_deadline;
+                        }
+
+
                     } else {
                         $dtdue =  0;
                     };
