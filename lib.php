@@ -1447,7 +1447,7 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
             // Only update as necessary.
             if ($updaterequired) {
                 $DB->update_record('plagiarism_turnitin_files', $plagiarismfile);
-                
+
                 // At the moment TII doesn't support double marking so we won't synchronise grades from Grade Mark for double marked courseworks as it would destroy the workflow.
                 if ($cm->modname == "coursework" ) {
                     $moduleclass = "turnitin_".$cm->modname;
