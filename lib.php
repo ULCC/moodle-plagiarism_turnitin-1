@@ -2451,7 +2451,8 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
 
         } elseif ($cm->modname == 'coursework'){
             $userid = $author;
-            $moduledata->resubmission_allowed = $moduleobject->is_resubmission_allowed(
+            $turnitincw = new turnitin_coursework();
+            $moduledata->resubmission_allowed = $turnitincw->is_resubmission_allowed(
                 $cm->instance,
                 $settings["plagiarism_report_gen"],
                 $submissiontype
