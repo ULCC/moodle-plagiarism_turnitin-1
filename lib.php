@@ -1527,6 +1527,9 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                 $grade->grade = ($submission->getGrade() == '') ? null : $submission->getGrade();
             }
 
+            // for Coursework if grade is null skip grade update
+            if($cm->modname == 'coursework' && is_null($grade->grade)) { return true;}
+
             // Check whether submission is a group submission - only applicable to assignment module.
             // If it's a group submission we will update the grade for everyone in the group.
             // Note: This will not work if the submitting user is in multiple groups.
