@@ -655,9 +655,15 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
             }
         }
 
-        // If this is a quiz, retrieve the cmid
         $component = (!empty($linkarray['component'])) ? $linkarray['component'] : "";
-        if ($component == "qtype_essay" && !empty($linkarray['area'])) {
+
+        // Exit if this is a quiz and quizzes are disabled.
+        if ($component == "qtype_essay" && empty($this->get_config_settings('mod_quiz'))) {
+            return $output;
+        }
+
+        // If this is a quiz, retrieve the cmid
+        if ($component == "qtype_essay" && !empty($linkarray['area']) && empty($linkarray['cmid'])) {
             $questions = question_engine::load_questions_usage_by_activity($linkarray['area']);
 
             // Try to get cm using the questions owning context.
@@ -686,8 +692,8 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
         }
 
         // Retrieve the plugin settings for this module.
-        static $plagiarismsettings;
-        if (empty($plagiarismsettings)) {
+        static $plagiarismsettings = null;
+        if (is_null($plagiarismsettings)) {
             $plagiarismsettings = $this->get_settings($linkarray["cmid"]);
         }
 
@@ -1457,13 +1463,15 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                 if ($cm->modname == "quiz") {
                     $quiz = $DB->get_record('quiz', array('id' => $cm->instance));
                     $tq = new turnitin_quiz();
-                    $tq->update_mark(
-                        $submissiondata->itemid,
-                        $submissiondata->identifier,
-                        $submissiondata->userid,
-                        $plagiarismfile->grade,
-                        $quiz->grade
-                    );
+                    if (!is_null($plagiarismfile->grade)) {
+                        $tq->update_mark(
+                            $submissiondata->itemid,
+                            $submissiondata->identifier,
+                            $submissiondata->userid,
+                            $plagiarismfile->grade,
+                            $quiz->grade
+                        );
+                    }
                 } else {
                     $gradeitem = $DB->get_record('grade_items',
                         array('iteminstance' => $cm->instance, 'itemmodule' => $cm->modname,
@@ -1600,6 +1608,11 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
 
                 if ($currentgrade) {
                     $grade->id = $currentgrade->id;
+
+                    if ($cm->modname == 'assign') {
+                        $grade->grader = $USER->id;
+                    }
+
                     $return = $DB->update_record($table, $grade);
                 } else {
                     $grade->userid = $userid;
@@ -3277,7 +3290,13 @@ function plagiarism_turnitin_send_queued_submissions() {
                 }
 
                 require_once($CFG->dirroot . '/mod/quiz/locallib.php');
-                $attempt = quiz_attempt::create($queueditem->itemid);
+                try {
+                    $attempt = quiz_attempt::create($queueditem->itemid);
+                } catch (Exception $e) {
+                    plagiarism_turnitin_activitylog(get_string('errorcode14', 'plagiarism_turnitin'), "PP_NO_ATTEMPT");
+                    $errorcode = 14;
+                    break;
+                }
                 foreach ($attempt->get_slots() as $slot) {
                     $qa = $attempt->get_question_attempt($slot);
                     if ($queueditem->identifier == sha1($qa->get_response_summary())) {
