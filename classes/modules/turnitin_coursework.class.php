@@ -42,7 +42,8 @@ class turnitin_coursework {
 
     public function can_add_all_grades($coursework){
         $context = $coursework->get_course_context();
-       return has_capability('mod/coursework:administergrades', $context);
+        $capabilities = array('mod/coursework:administergrades', 'mod/coursework:viewplagiarismfeedback');
+        return has_any_capability($capabilities, $context);
     }
 
     public function get_tutor_capability() {
