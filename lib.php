@@ -2119,8 +2119,10 @@ class plagiarism_plugin_turnitin extends plagiarism_plugin {
                     $coursework = new \mod_coursework\models\coursework($cm->instance);
                     if(!empty($moduledata->deadline)){
                         if($moduledata->personaldeadlineenabled){ // check if submission uses personal deadline
-                            $dtdue =
-                                \mod_coursework\models\personal_deadline::get_personal_deadline_for_student(\mod_coursework\models\user::find($tiisubmission->userid), $coursework);
+                            $pd = \mod_coursework\models\personal_deadline::get_personal_deadline_for_student(\mod_coursework\models\user::find($tiisubmission->userid), $coursework);
+                            if($pd) {
+                                $dtdue = $pd->personal_deadline;
+                            }
                         } else {
                             $dtdue = $moduledata->deadline;
                         }
