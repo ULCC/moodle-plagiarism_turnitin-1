@@ -19,7 +19,6 @@
  * @copyright 2012 iParadigms LLC
  */
 
-$plugin->version = 2022092102;
 $plugin->version = 2023082201;
 $plugin->release = "3.5+";
 $plugin->requires = 2018051700;
