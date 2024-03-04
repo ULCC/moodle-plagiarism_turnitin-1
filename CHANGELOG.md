@@ -1,3 +1,18 @@
+### Date:       2024-February-05
+### Release:    v2024020501
+
+#### Issue with PeerMark, Rubric, and QuickMark in Moodle 4.3 fixed
+In the previous plugin release we resolved an issue with the EULA modal not launching for students. It has since been discovered that all modals in the plugin were affected by the same issue. This update resolves the issues that users have found with launching the PeerMark, Rubric, and QuickMark managers.
+
+### Date:       2023-December-19
+### Release:    v2023121901
+
+#### New students can now access the EULA
+Previously there was an issue with students accepting the EULA in Moodle 4.3. This has now been resolved and students presented with the EULA should be able to successfully accept it.
+
+#### Correct rounding of grade average
+Previously when multiple submissions were made to an assignment the final grade was averaged by rounding down rather than up. This release now fixes this issue and the grade average should now round up.
+
 ### Date:       2023-August-22
 ### Release:    v2023082201
 
